@@ -140,6 +140,7 @@ class Bot(object):
             self.logger.error("coudlnt change the stop limit order {}".format(e))
             if  e.code ==-2010:
                 quantity=quantity - self.quant_min
+                quantity = round(quantity, self.quantity_round)
                 order = self.client.create_order(type="STOP_LOSS_LIMIT", side="SELL",price=stop, stopPrice=stop, quantity=quantity, symbol=self.symbol, timeInForce='GTC')
             else:
                 quit()
