@@ -19,6 +19,7 @@ class Bot(object):
 
     current_stop = {}
     price_round = 0
+    price_min = 0
     min_points_list = []
     data_dict = {
         'timestamp': [],
@@ -40,7 +41,8 @@ class Bot(object):
             'orderId': order['orderId'],
             'price': float(order['stopPrice'])
         }
-        p = float(self.client.get_symbol_info(symbol=self.symbol)['filters'][2]['minQty'])
+        self.price_min = float(self.client.get_symbol_info(symbol=self.symbol)['filters'][2]['minQty'])
+        p = self.price_min
         while p != 1:
             p = p * 10
             self.price_round = self.price_round + 1
@@ -124,7 +126,16 @@ class Bot(object):
         self.client.cancel_order(orderId=self.current_stop['orderId'], symbol=self.symbol)
         quantity = float(self.client.get_asset_balance(asset=self.symbol.replace('USDT',''))['free'])
         quantity = round(quantity, self.price_round)
-        order = self.client.create_order(type="STOP_LOSS_LIMIT", side="SELL",price=stop, stopPrice=stop, quantity=quantity, symbol=self.symbol, timeInForce='GTC')
+        try:
+            order = self.client.create_order(type="STOP_LOSS_LIMIT", side="SELL",price=stop, stopPrice=stop, quantity=quantity, symbol=self.symbol, timeInForce='GTC')
+        except Exception as e:
+            self.logger.error("coudlnt change the stop limit order {}".format(e))
+            if  e.code ==-2010:
+                quantity=quantity - self.price_min
+                order = self.client.create_order(type="STOP_LOSS_LIMIT", side="SELL",price=stop, stopPrice=stop, quantity=quantity, symbol=self.symbol, timeInForce='GTC')
+            else:
+                quit()
+
         self.current_stop = {
             'orderId': order['orderId'],
             'price': stop

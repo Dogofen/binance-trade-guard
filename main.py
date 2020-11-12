@@ -1,5 +1,4 @@
 #!/usr/bin/python
-import time
 from guard_bot import Bot
 import sys
 
